@@ -4,3 +4,9 @@
 [submodule "vendor/usb-device"]
 	path = vendor/usb-device
 	url = https://github.com/mvirkkunen/usb-device.git
+[submodule "vendor/heapless"]
+	path = vendor/heapless
+	url = https://github.com/jmgao/heapless.git
+[submodule "vendor/stm32f1xx-hal"]
+	path = vendor/stm32f1xx-hal
+	url = https://github.com/jmgao/stm32f1xx-hal.git
