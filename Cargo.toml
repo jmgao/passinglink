@@ -7,6 +7,8 @@ version = "0.0.0"
 edition = "2018"
 
 [dependencies]
+log = "0.4"
+
 cortex-m = { version = "0.6", features = ["inline-asm", "const-fn"] }
 cortex-m-rt = { version = "0.6.6", features = ["device"] }
 cortex-m-semihosting = { version = "0.3.3", features = ["inline-asm"] }
@@ -25,3 +27,7 @@ stm32f1xx-hal = { path = "vendor/stm32f1xx-hal" }
 
 [patch.'https://github.com/mvirkkunen/usb-device']
 usb-device = { path = "vendor/usb-device" }
+
+[features]
+default = ["color"]
+color = []

@@ -7,11 +7,14 @@ extern crate panic_semihosting;
 
 use core::fmt::Write;
 
+#[macro_use]
+extern crate log;
+
 use rtfm::app;
 use rtfm::Instant;
-use stm32f1xx_hal::prelude::*;
 
 use stm32f1xx_hal::gpio;
+use stm32f1xx_hal::prelude::*;
 use stm32f1xx_hal::serial::{Parity, Serial, StopBits};
 
 use stm32f103xx_usb::UsbBus;
@@ -23,10 +26,11 @@ use serial::BufferedSerial;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
+static mut SERIAL: Option<BufferedSerial> = None;
+
 #[app(device = stm32f1xx_hal::stm32)]
 const APP: () = {
   static mut LED: gpio::gpioc::PC13<gpio::Output<gpio::PushPull>> = ();
-  static mut SERIAL: BufferedSerial = ();
 
   static mut USB_DEV: UsbDevice<'static, UsbBus> = ();
 
@@ -62,14 +66,24 @@ const APP: () = {
       stopbits: StopBits::STOP1,
     };
 
-    let mut serial = BufferedSerial::new(Serial::usart2(
+    let serial = Serial::usart2(
       device.USART2,
       (pin_tx, pin_rx),
       &mut afio.mapr,
       serial_config,
       clocks,
       &mut rcc.apb1,
-    ));
+    );
+
+    let buffered_serial = BufferedSerial::new(serial);
+
+    unsafe {
+      SERIAL = Some(buffered_serial);
+      log::set_logger(SERIAL.as_ref().unwrap()).unwrap();
+      log::set_max_level(log::LevelFilter::Trace);
+    }
+    info!("passinglink v{} initialized", VERSION);
+    schedule.periodic(Instant::now() + 7_200_000.cycles()).unwrap();
 
     *USB_BUS = Some(UsbBus::usb_with_reset(
       device.USB,
@@ -90,23 +104,30 @@ const APP: () = {
 
     usb_dev.force_reset().expect("reset failed");
 
-    write!(serial, "passinglink v{} initialized\r\n", VERSION).unwrap();
-    schedule.periodic(Instant::now() + 7_200_000.cycles()).unwrap();
-
     LED = led;
-    SERIAL = serial;
     USB_DEV = usb_dev;
   }
 
-  #[task(schedule = [periodic], resources = [LED, SERIAL])]
+  #[task(priority = 16, schedule = [periodic], resources = [LED])]
   fn periodic() {
     resources.LED.toggle();
-    schedule.periodic(scheduled + 7_200_000.cycles()).unwrap();
+
+    unsafe {
+      if let Some(ref mut buffered_serial) = SERIAL {
+        buffered_serial.tick();
+      }
+    }
+
+    schedule.periodic(scheduled + 72_000_000.cycles()).unwrap();
   }
 
-  #[interrupt(resources = [SERIAL])]
+  #[interrupt]
   fn USART2() {
-    resources.SERIAL.poll();
+    unsafe {
+      if let Some(ref mut serial) = SERIAL {
+        serial.poll();
+      }
+    }
   }
 
   #[interrupt(resources = [USB_DEV])]
