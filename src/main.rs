@@ -1,6 +1,7 @@
 #![no_main]
 #![no_std]
 #![allow(non_snake_case)]
+#![feature(asm)]
 
 extern crate panic_semihosting;
 
@@ -105,7 +106,11 @@ const APP: () = {
 
   #[idle]
   fn idle() -> ! {
-    loop {}
+    loop {
+      unsafe {
+        asm!("nop");
+      }
+    }
   }
 };
 
