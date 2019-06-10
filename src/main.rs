@@ -34,7 +34,7 @@ const APP: () = {
 
   static mut USB_DEV: UsbDevice<'static, UsbBus> = ();
 
-  #[init(schedule = [periodic])]
+  #[init(schedule = [timer_tick])]
   fn init() {
     static mut USB_BUS: Option<bus::UsbBusAllocator<UsbBus>> = None;
 
@@ -83,7 +83,7 @@ const APP: () = {
       log::set_max_level(log::LevelFilter::Trace);
     }
     info!("passinglink v{} initialized", VERSION);
-    schedule.periodic(Instant::now() + 7_200_000.cycles()).unwrap();
+    schedule.timer_tick(Instant::now() + 7_200_000.cycles()).unwrap();
 
     *USB_BUS = Some(UsbBus::usb_with_reset(
       device.USB,
@@ -108,8 +108,8 @@ const APP: () = {
     USB_DEV = usb_dev;
   }
 
-  #[task(priority = 16, schedule = [periodic], resources = [LED])]
-  fn periodic() {
+  #[task(priority = 16, schedule = [timer_tick], resources = [LED])]
+  fn timer_tick() {
     resources.LED.toggle();
 
     unsafe {
@@ -118,7 +118,7 @@ const APP: () = {
       }
     }
 
-    schedule.periodic(scheduled + 72_000_000.cycles()).unwrap();
+    schedule.timer_tick(scheduled + 72_000_000.cycles()).unwrap();
   }
 
   #[interrupt]
