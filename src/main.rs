@@ -5,10 +5,10 @@
 
 extern crate panic_semihosting;
 
-use core::fmt::Write;
-
 #[macro_use]
 extern crate log;
+
+use core::fmt::Write;
 
 use rtfm::app;
 use rtfm::Instant;
@@ -75,9 +75,10 @@ const APP: () = {
       &mut rcc.apb1,
     );
 
-    let buffered_serial = BufferedSerial::new(serial);
+    let mut buffered_serial = BufferedSerial::new(serial);
 
     unsafe {
+      let _ = write!(buffered_serial, "\r\n\r\n");
       SERIAL = Some(buffered_serial);
       log::set_logger(SERIAL.as_ref().unwrap()).unwrap();
       log::set_max_level(log::LevelFilter::Trace);
