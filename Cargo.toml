@@ -15,18 +15,15 @@ cortex-m-semihosting = { version = "0.3.3", features = ["inline-asm"] }
 panic-semihosting = { version = "0.5", features = ["inline-asm"] }
 
 cortex-m-rtfm = { version = "0.4", features = ["timer-queue"] }
-
+proper = { path = "vendor/proper" }
 heapless = { path = "vendor/heapless" }
-stm32f1xx-hal = { path = "vendor/stm32f1xx-hal", version = "0.3", features = ["rt", "stm32f103"] }
+stm32f1xx-hal = { path = "vendor/stm32f1xx-hal", features = ["rt", "stm32f103"] }
 usb-device = { path = "vendor/usb-device" }
 stm32f103xx-usb = { path = "vendor/stm32f103xx-usb" }
 
 [patch.crates-io]
 heapless = { path = "vendor/heapless" }
 stm32f1xx-hal = { path = "vendor/stm32f1xx-hal" }
-
-[patch.'https://github.com/mvirkkunen/usb-device']
-usb-device = { path = "vendor/usb-device" }
 
 [features]
 default = ["color"]
