@@ -19,11 +19,12 @@ proper = { path = "../vendor/proper" }
 heapless = { path = "../vendor/heapless" }
 stm32f1xx-hal = { path = "../vendor/stm32f1xx-hal", features = ["rt", "stm32f103"] }
 usb-device = { path = "../vendor/usb-device" }
-stm32f103xx-usb = { path = "../vendor/stm32f103xx-usb" }
+stm32-usbd = { version = "0.2.1", features = ["stm32f103xx"] }
 
 [patch.crates-io]
 heapless = { path = "../vendor/heapless" }
 stm32f1xx-hal = { path = "../vendor/stm32f1xx-hal" }
+usb-device = { path = "../vendor/usb-device" }
 
 [features]
 default = ["color"]
