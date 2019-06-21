@@ -99,6 +99,8 @@ pub enum HatType {
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct DeviceInputs {
+  pub counter: u8,
+
   pub axis_left_stick_x: Axis,
   pub axis_left_stick_y: Axis,
 
@@ -145,6 +147,8 @@ pub struct DeviceInputs {
 impl DeviceInputs {
   pub const fn default() -> DeviceInputs {
     DeviceInputs {
+      counter: 0,
+
       axis_left_stick_x: Axis(128),
       axis_left_stick_y: Axis(128),
 

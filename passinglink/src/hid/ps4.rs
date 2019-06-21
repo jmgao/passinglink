@@ -12,7 +12,7 @@ struct PS4HidReport {
   right_stick_x: u8,
   right_stick_y: u8,
 
-  /// First 4 bits are the hat position, followed by 14 bits for buttons, followed by 6 mystery bits.
+  /// First 4 bits are the hat position, followed by 14 bits for buttons, followed by a 6-bit report counter.
   hat_buttons: [u8; 3],
 
   left_trigger: u8,
@@ -81,6 +81,7 @@ impl PS4HidReport {
       | button_11 << 6
       | button_12 << 7;
     self.hat_buttons[2] = button_13 | button_14 << 1;
+    self.hat_buttons[2] |= inputs.counter & 0b00111111;
 
     self.left_trigger = inputs.axis_left_trigger.get();
     self.right_trigger = inputs.axis_right_trigger.get();
