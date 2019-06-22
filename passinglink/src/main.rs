@@ -136,19 +136,19 @@ const APP: () = {
       COUNTER = COUNTER.wrapping_add(1);
 
       // Press home once after 1 second, then 2 seconds later X, and then start doing SPDs every 17 milliseconds after.
-      if COUNTER == 1000 {
+      if COUNTER == 3000 {
         INPUTS.button_home.set();
-      } else if COUNTER == 1250 {
-        INPUTS.button_home.clear();
-      } else if COUNTER == 3000 {
-        INPUTS.button_south.set();
       } else if COUNTER == 3250 {
+        INPUTS.button_home.clear();
+      } else if COUNTER == 5000 {
+        INPUTS.button_south.set();
+      } else if COUNTER == 5250 {
         INPUTS.button_south.clear();
-      } else if COUNTER == 4000 {
+      } else if COUNTER == 6000 {
         INPUTS.button_east.set();
-      } else if COUNTER == 4250 {
+      } else if COUNTER == 6250 {
         INPUTS.button_east.clear();
-      } else if COUNTER > 5000 {
+      } else if COUNTER > 6250 {
         let input = COUNTER / 17;
         INPUTS.hat_dpad = match input % 8 {
           0 => Hat::North,
