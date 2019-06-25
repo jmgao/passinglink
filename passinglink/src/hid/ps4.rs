@@ -200,17 +200,31 @@ impl Hid for PS4Hid {
   }
 
   fn set_report(&mut self, report_type: HidReportType, report_id: u8, data: &[u8]) -> Result<(), ()> {
-    info!(
-      "PS4Device::set_report({:?}, {:#x}, {} bytes) = {:x?}",
-      report_type,
-      report_id,
-      data.len(),
-      data
-    );
-    Ok(())
+    if report_type == HidReportType::Feature {
+      if report_id == 0xf0 {
+        if data.len() != 64 {
+          error!("unexpected nonce packet size: {}", data.len());
+          return Err(());
+        }
+
+        crate::auth::set_nonce(data)
+      } else {
+        Err(())
+      }
+    } else {
+      warn!(
+        "PS4Device::set_report({:?}, {:#x}, {} bytes) unhandled, data = {:?}",
+        report_type,
+        report_id,
+        data.len(),
+        data
+      );
+      Err(())
+    }
   }
 
   fn get_report(&mut self, report_type: HidReportType, report_id: u8, length: Option<u16>) -> Result<&[u8], ()> {
+    static mut REPORT_BUF: [u8; 64] = [0u8; 64];
     if let Some(len) = length {
       info!(
         "PS4Hid::get_report({:?}, {:#x}): expecting {} bytes",
@@ -241,6 +255,52 @@ impl Hid for PS4Hid {
         ])
       } else {
         error!("unexpected length for report 0x3, expected 48, got {}", length.unwrap());
+        Err(())
+      }
+    } else if report_id == 0xf1 {
+      if length == Some(64) {
+        unsafe {
+          if crate::auth::get_signature_chunk(&mut REPORT_BUF).is_ok() {
+            Ok(&REPORT_BUF)
+          } else {
+            Err(())
+          }
+        }
+      } else {
+        error!(
+          "unexpected length for report 0xf1, expected 16, got {}",
+          length.unwrap()
+        );
+        Err(())
+      }
+    } else if report_id == 0xf2 {
+      if length == Some(16) {
+        let value = if crate::auth::signature_ready() {
+          info!("signature ready");
+          0
+        } else {
+          info!("signature not ready yet");
+          16
+        };
+
+        unsafe {
+          REPORT_BUF[0] = 0xf2;
+          REPORT_BUF[1] = crate::auth::get_nonce_id();
+          REPORT_BUF[2] = value;
+          Ok(&REPORT_BUF[..16])
+        }
+      } else {
+        error!(
+          "unexpected length for report 0xf2, expected 16, got {}",
+          length.unwrap()
+        );
+        Err(())
+      }
+    } else if report_id == 0xf3 {
+      if length == Some(8) {
+        Ok(&[0xf3, 0, 56, 56, 0, 0, 0, 0])
+      } else {
+        error!("unexpected length for report 0xf3, expected 8, got {}", length.unwrap());
         Err(())
       }
     } else {

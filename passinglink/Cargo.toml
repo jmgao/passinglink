@@ -6,6 +6,9 @@ license = "MIT"
 version = "0.0.0"
 edition = "2018"
 
+[build-dependencies]
+ds4auth = { path = "../ds4auth" }
+
 [dependencies]
 log = "0.4"
 
@@ -20,6 +23,9 @@ heapless = { path = "../vendor/heapless" }
 stm32f1xx-hal = { path = "../vendor/stm32f1xx-hal", features = ["rt", "stm32f103"] }
 usb-device = { path = "../vendor/usb-device" }
 stm32-usbd = { version = "0.2.1", features = ["stm32f103xx"] }
+
+crc = { version = "^1.0.0", default-features = false, features = [] }
+ds4auth = { path = "../ds4auth" }
 
 [patch.crates-io]
 heapless = { path = "../vendor/heapless" }

@@ -13,3 +13,7 @@
 [submodule "vendor/proper"]
 	path = vendor/proper
 	url = https://github.com/jmgao/proper.git
+[submodule "vendor/ring"]
+	path = vendor/ring
+	url = https://github.com/jmgao/ring.git
+	branch = hacks

@@ -1,0 +1,12 @@
+[package]
+name = "ds4dump"
+version = "0.1.0"
+authors = ["Josh Gao <josh@jmgao.dev>"]
+edition = "2018"
+
+[dependencies]
+ds4auth = { path = "../ds4auth" }
+hidapi = "0.5"
+crc = "^1.0.0"
+ring = { path = "../vendor/ring" }
+untrusted = "^0.6.2"

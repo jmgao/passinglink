@@ -1,7 +1,7 @@
 use core::cell::RefCell;
 use core::fmt::Write;
 
-use heapless::consts::U4096;
+use heapless::consts::U512;
 use heapless::spsc::Queue;
 use heapless::spsc::SingleCore;
 
@@ -13,7 +13,7 @@ use stm32f1xx_hal::serial::{Serial, Tx};
 
 struct BufferedSerialState {
   tx: Tx<USART2>,
-  buffer: Queue<u8, U4096, u16, SingleCore>,
+  buffer: Queue<u8, U512, u16, SingleCore>,
 
   /// Number of seconds that have elapsed so far.
   seconds: u32,

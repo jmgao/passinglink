@@ -1,7 +1,19 @@
 #![no_main]
 #![no_std]
 #![allow(non_snake_case)]
-#![feature(asm)]
+#![feature(asm, alloc_error_handler)]
+
+extern crate alloc;
+
+mod allocator;
+
+#[global_allocator]
+static ALLOC: allocator::Allocator = allocator::Allocator::new();
+
+#[alloc_error_handler]
+fn alloc_error_handler(_: alloc::alloc::Layout) -> ! {
+  panic!("failed to allocate");
+}
 
 extern crate panic_semihosting;
 
@@ -27,6 +39,7 @@ use stm32_usbd::{UsbBus, UsbPinsType};
 use usb_device::bus;
 use usb_device::prelude::*;
 
+pub mod auth;
 mod hid;
 
 mod input;
@@ -207,16 +220,23 @@ const APP: () = {
 
   #[idle]
   fn idle() -> ! {
-    loop {
-      unsafe {
-        asm!("nop");
-      }
-    }
+    auth::read_keypair();
+    allocator::dump_state();
+    auth::perform_work();
   }
 };
 
 fn usb_poll<B: bus::UsbBus>(usb_dev: &mut UsbDevice<'static, B>, hid: &mut hid::HidClass<'static, hid::PS4Hid, B>) {
   if !usb_dev.poll(&mut [hid]) {
     return;
+  }
+}
+
+// Symbol used by BoringSSL functions compiled by ring.
+#[no_mangle]
+pub extern "C" fn __assert_func(_file: u32, _line: u32, _func: u32, _expr: u32) {
+  error!("assertion triggered");
+  loop {
+    unsafe { asm!("nop") };
   }
 }

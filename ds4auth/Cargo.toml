@@ -1,0 +1,10 @@
+[package]
+name = "ds4auth"
+version = "0.1.0"
+authors = ["Josh Gao <josh@jmgao.dev>"]
+edition = "2018"
+
+[dependencies]
+log = "0.4"
+crc = { version = "^1.0.0", default-features = false, features = [] }
+ring = { path = "../vendor/ring", default-features = false, features = ["use_heap"] }
