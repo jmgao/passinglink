@@ -10,7 +10,7 @@ edition = "2018"
 ds4auth = { path = "../ds4auth" }
 
 [dependencies]
-log = "0.4"
+log = { version = "0.4" }
 
 cortex-m = { version = "0.6", features = ["inline-asm", "const-fn"] }
 cortex-m-rt = { version = "0.6.6", features = ["device"] }
@@ -35,3 +35,4 @@ usb-device = { path = "../vendor/usb-device" }
 [features]
 default = ["color"]
 color = []
+no_serial = ["log/max_level_off", "log/release_max_level_off"]

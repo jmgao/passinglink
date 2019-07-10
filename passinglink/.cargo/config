@@ -10,3 +10,4 @@ target = "thumbv7m-none-eabi"
 debug = true
 lto = true
 opt-level = "z"
+codegen-units = 1

@@ -23,6 +23,7 @@ extern crate log;
 #[macro_use]
 extern crate proper;
 
+#[cfg(not(feature = "no_serial"))]
 use core::fmt::Write;
 
 use cortex_m::asm::delay;
@@ -33,6 +34,8 @@ use rtfm::Instant;
 
 use stm32f1xx_hal::gpio;
 use stm32f1xx_hal::prelude::*;
+
+#[cfg(not(feature = "no_serial"))]
 use stm32f1xx_hal::serial::{Parity, Serial, StopBits};
 
 use stm32_usbd::{UsbBus, UsbPinsType};
@@ -46,12 +49,14 @@ mod input;
 use input::DeviceInputs;
 use input::Hat;
 
+#[cfg(not(feature = "no_serial"))]
 mod serial;
-use serial::BufferedSerial;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-static mut SERIAL: Option<BufferedSerial> = None;
+#[cfg(not(feature = "no_serial"))]
+static mut SERIAL: Option<serial::BufferedSerial> = None;
+
 static mut INPUTS: DeviceInputs = DeviceInputs::default();
 
 #[app(device = stm32f1xx_hal::stm32)]
@@ -81,35 +86,39 @@ const APP: () = {
     let mut led = gpioc.pc13.into_push_pull_output(&mut gpioc.crh);
     led.set_high();
 
-    let mut afio = device.AFIO.constrain(&mut rcc.apb2);
     let mut gpioa = device.GPIOA.split(&mut rcc.apb2);
 
-    let pin_tx = gpioa.pa2.into_alternate_push_pull(&mut gpioa.crl);
-    let pin_rx = gpioa.pa3;
+    #[cfg(not(feature = "no_serial"))]
+    {
+      let mut afio = device.AFIO.constrain(&mut rcc.apb2);
+      let pin_tx = gpioa.pa2.into_alternate_push_pull(&mut gpioa.crl);
+      let pin_rx = gpioa.pa3;
 
-    let serial_config = stm32f1xx_hal::serial::Config {
-      baudrate: 921_600.bps(),
-      parity: Parity::ParityNone,
-      stopbits: StopBits::STOP1,
-    };
+      let serial_config = stm32f1xx_hal::serial::Config {
+        baudrate: 921_600.bps(),
+        parity: Parity::ParityNone,
+        stopbits: StopBits::STOP1,
+      };
 
-    let serial = Serial::usart2(
-      device.USART2,
-      (pin_tx, pin_rx),
-      &mut afio.mapr,
-      serial_config,
-      clocks,
-      &mut rcc.apb1,
-    );
+      let serial = Serial::usart2(
+        device.USART2,
+        (pin_tx, pin_rx),
+        &mut afio.mapr,
+        serial_config,
+        clocks,
+        &mut rcc.apb1,
+      );
 
-    let mut buffered_serial = BufferedSerial::new(serial);
+      let mut buffered_serial = serial::BufferedSerial::new(serial);
 
-    unsafe {
-      let _ = write!(buffered_serial, "\r\n\r\n");
-      SERIAL = Some(buffered_serial);
-      log::set_logger(SERIAL.as_ref().unwrap()).unwrap();
-      log::set_max_level(log::LevelFilter::Trace);
+      unsafe {
+        let _ = write!(buffered_serial, "\r\n\r\n");
+        SERIAL = Some(buffered_serial);
+        log::set_logger(SERIAL.as_ref().unwrap()).unwrap();
+        log::set_max_level(log::LevelFilter::Trace);
+      }
     }
+
     info!("passinglink v{} initialized", VERSION);
     schedule.timer_tick(Instant::now() + 7_200_000.cycles()).unwrap();
 
@@ -185,6 +194,7 @@ const APP: () = {
   fn timer_tick() {
     resources.LED.toggle();
 
+    #[cfg(not(feature = "no_serial"))]
     unsafe {
       if let Some(ref mut buffered_serial) = SERIAL {
         buffered_serial.tick();
@@ -195,6 +205,7 @@ const APP: () = {
   }
 
   #[interrupt]
+  #[cfg(not(feature = "no_serial"))]
   fn USART2() {
     unsafe {
       if let Some(ref mut serial) = SERIAL {
