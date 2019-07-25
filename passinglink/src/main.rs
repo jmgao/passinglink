@@ -33,6 +33,7 @@ use rtfm::app;
 use rtfm::Instant;
 
 use stm32f1xx_hal::gpio;
+use stm32f1xx_hal::gpio::PullUp;
 use stm32f1xx_hal::prelude::*;
 
 #[cfg(not(feature = "no_serial"))]
@@ -57,11 +58,40 @@ const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 #[cfg(not(feature = "no_serial"))]
 static mut SERIAL: Option<serial::BufferedSerial> = None;
 
-static mut INPUTS: DeviceInputs = DeviceInputs::default();
+static mut OUTPUT: DeviceInputs = DeviceInputs::default();
+
+pub struct InputPins {
+  stick_down: gpio::gpiob::PB5<gpio::Input<PullUp>>,
+  stick_up: gpio::gpiob::PB6<gpio::Input<PullUp>>,
+  stick_left: gpio::gpiob::PB7<gpio::Input<PullUp>>,
+  stick_right: gpio::gpiob::PB8<gpio::Input<PullUp>>,
+
+  button_north: gpio::gpioc::PC11<gpio::Input<PullUp>>,
+  button_east: gpio::gpioa::PA9<gpio::Input<PullUp>>,
+  button_south: gpio::gpioa::PA10<gpio::Input<PullUp>>,
+  button_west: gpio::gpioc::PC10<gpio::Input<PullUp>>,
+
+  button_l1: gpio::gpiod::PD2<gpio::Input<PullUp>>,
+  button_r1: gpio::gpioc::PC12<gpio::Input<PullUp>>,
+
+  button_l2: gpio::gpioc::PC9<gpio::Input<PullUp>>,
+  button_r2: gpio::gpioa::PA8<gpio::Input<PullUp>>,
+
+  button_l3: gpio::gpioa::PA7<gpio::Input<PullUp>>,
+  button_r3: gpio::gpiob::PB11<gpio::Input<PullUp>>,
+
+  button_home: gpio::gpiob::PB1<gpio::Input<PullUp>>,
+  button_start: gpio::gpioc::PC7<gpio::Input<PullUp>>,
+  button_select: gpio::gpioc::PC8<gpio::Input<PullUp>>,
+
+  button_trackpad: gpio::gpioa::PA6<gpio::Input<PullUp>>,
+}
 
 #[app(device = stm32f1xx_hal::stm32)]
 const APP: () = {
   static mut LED: gpio::gpioc::PC13<gpio::Output<gpio::PushPull>> = ();
+
+  static mut INPUT: InputPins = ();
 
   static mut USB_DEV: UsbDevice<'static, UsbBus<UsbPinsType>> = ();
   static mut USB_HID: hid::HidClass<'static, hid::PS4Hid, UsbBus<UsbPinsType>> = ();
@@ -82,11 +112,39 @@ const APP: () = {
 
     assert!(clocks.usbclk_valid());
 
+    let mut gpioa = device.GPIOA.split(&mut rcc.apb2);
+    let mut gpiob = device.GPIOB.split(&mut rcc.apb2);
     let mut gpioc = device.GPIOC.split(&mut rcc.apb2);
+    let mut gpiod = device.GPIOD.split(&mut rcc.apb2);
+
     let mut led = gpioc.pc13.into_push_pull_output(&mut gpioc.crh);
     led.set_high();
 
-    let mut gpioa = device.GPIOA.split(&mut rcc.apb2);
+    let input = InputPins {
+      stick_down: gpiob.pb5.into_pull_up_input(&mut gpiob.crl),
+      stick_up: gpiob.pb6.into_pull_up_input(&mut gpiob.crl),
+      stick_left: gpiob.pb7.into_pull_up_input(&mut gpiob.crl),
+      stick_right: gpiob.pb8.into_pull_up_input(&mut gpiob.crh),
+
+      button_north: gpioc.pc11.into_pull_up_input(&mut gpioc.crh),
+      button_east: gpioa.pa9.into_pull_up_input(&mut gpioa.crh),
+      button_south: gpioa.pa10.into_pull_up_input(&mut gpioa.crh),
+      button_west: gpioc.pc10.into_pull_up_input(&mut gpioc.crh),
+
+      button_l1: gpiod.pd2.into_pull_up_input(&mut gpiod.crl),
+      button_r1: gpioc.pc12.into_pull_up_input(&mut gpioc.crh),
+
+      button_l2: gpioc.pc9.into_pull_up_input(&mut gpioc.crh),
+      button_r2: gpioa.pa8.into_pull_up_input(&mut gpioa.crh),
+
+      button_l3: gpioa.pa7.into_pull_up_input(&mut gpioa.crl),
+      button_r3: gpiob.pb11.into_pull_up_input(&mut gpiob.crh),
+
+      button_home: gpiob.pb1.into_pull_up_input(&mut gpiob.crl),
+      button_start: gpioc.pc7.into_pull_up_input(&mut gpioc.crl),
+      button_select: gpioc.pc8.into_pull_up_input(&mut gpioc.crh),
+      button_trackpad: gpioa.pa6.into_pull_up_input(&mut gpioa.crl),
+    };
 
     #[cfg(not(feature = "no_serial"))]
     {
@@ -132,7 +190,7 @@ const APP: () = {
     let usb_dp = usb_dp.into_floating_input(&mut gpioa.crh);
     *USB_BUS = Some(UsbBus::new(device.USB, (usb_dm, usb_dp)));
 
-    let ps4_hid = hid::PS4Hid::new(unsafe { &mut INPUTS as *mut DeviceInputs });
+    let ps4_hid = hid::PS4Hid::new(unsafe { &mut OUTPUT as *mut DeviceInputs });
     let usb_hid = hid::HidClass::new(ps4_hid, USB_BUS.as_ref().unwrap());
     let usb_dev = UsbDeviceBuilder::new(USB_BUS.as_ref().unwrap(), UsbVidPid(0x1209, 0x214D))
       .manufacturer("jmgao")
@@ -147,43 +205,70 @@ const APP: () = {
     schedule.input_poll(Instant::now() + 72_000.cycles()).unwrap();
 
     LED = led;
+    INPUT = input;
     USB_DEV = usb_dev;
     USB_HID = usb_hid;
   }
 
-  #[task(priority = 1, schedule = [input_poll], resources = [USB_DEV, USB_HID])]
+  #[task(priority = 1, schedule = [input_poll], resources = [INPUT, USB_DEV, USB_HID])]
   fn input_poll() {
     interrupt::free(|_| unsafe {
-      static mut COUNTER: u32 = 0;
-      COUNTER = COUNTER.wrapping_add(1);
+      OUTPUT.button_north.set_value(resources.INPUT.button_north.is_low());
+      OUTPUT.button_east.set_value(resources.INPUT.button_east.is_low());
+      OUTPUT.button_south.set_value(resources.INPUT.button_south.is_low());
+      OUTPUT.button_west.set_value(resources.INPUT.button_west.is_low());
 
-      // Press home once after 1 second, then 2 seconds later X, and then start doing SPDs every 17 milliseconds after.
-      if COUNTER == 3000 {
-        INPUTS.button_home.set();
-      } else if COUNTER == 3250 {
-        INPUTS.button_home.clear();
-      } else if COUNTER == 5000 {
-        INPUTS.button_south.set();
-      } else if COUNTER == 5250 {
-        INPUTS.button_south.clear();
-      } else if COUNTER == 6000 {
-        INPUTS.button_east.set();
-      } else if COUNTER == 6250 {
-        INPUTS.button_east.clear();
-      } else if COUNTER > 6250 {
-        let input = COUNTER / 17;
-        INPUTS.hat_dpad = match input % 8 {
-          0 => Hat::North,
-          1 => Hat::NorthEast,
-          2 => Hat::East,
-          3 => Hat::SouthEast,
-          4 => Hat::South,
-          5 => Hat::SouthWest,
-          6 => Hat::West,
-          7 => Hat::NorthWest,
-          _ => unreachable!(),
-        };
-      }
+      OUTPUT.button_l1.set_value(resources.INPUT.button_l1.is_low());
+      OUTPUT.button_r1.set_value(resources.INPUT.button_r1.is_low());
+
+      OUTPUT.button_l2.set_value(resources.INPUT.button_l2.is_low());
+      OUTPUT.button_r2.set_value(resources.INPUT.button_r2.is_low());
+
+      OUTPUT.button_l3.set_value(resources.INPUT.button_l3.is_low());
+      OUTPUT.button_r3.set_value(resources.INPUT.button_r3.is_low());
+
+      OUTPUT.button_home.set_value(resources.INPUT.button_home.is_low());
+      OUTPUT.button_start.set_value(resources.INPUT.button_start.is_low());
+      OUTPUT.button_select.set_value(resources.INPUT.button_select.is_low());
+      OUTPUT
+        .button_trackpad
+        .set_value(resources.INPUT.button_trackpad.is_low());
+
+      let (left, right) = (
+        resources.INPUT.stick_left.is_low(),
+        resources.INPUT.stick_right.is_low(),
+      );
+      let (up, down) = (resources.INPUT.stick_up.is_low(), resources.INPUT.stick_down.is_low());
+
+      // None is neutral, Some(false) is left, Some(true) is right.
+      let horizontal = match (left, right) {
+        // Horizontal SOCD = neutral.
+        (true, true) => None,
+        (true, false) => Some(false),
+        (false, true) => Some(true),
+        (false, false) => None,
+      };
+
+      // None is neutral, Some(false) is down, Some(true) is up.
+      let vertical = match (up, down) {
+        // Vertical SOCD = up.
+        (true, true) => Some(true),
+        (true, false) => Some(true),
+        (false, true) => Some(false),
+        (false, false) => None,
+      };
+
+      OUTPUT.hat_dpad = match (horizontal, vertical) {
+        (None, None) => Hat::Neutral,
+        (Some(true), None) => Hat::East,
+        (Some(true), Some(false)) => Hat::SouthEast,
+        (None, Some(false)) => Hat::South,
+        (Some(false), Some(false)) => Hat::SouthWest,
+        (Some(false), None) => Hat::West,
+        (Some(false), Some(true)) => Hat::NorthWest,
+        (None, Some(true)) => Hat::North,
+        (Some(true), Some(true)) => Hat::NorthEast,
+      };
     });
 
     resources.USB_HID.send();
