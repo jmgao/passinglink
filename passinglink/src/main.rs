@@ -89,8 +89,6 @@ pub struct InputPins {
 
 #[app(device = stm32f1xx_hal::stm32)]
 const APP: () = {
-  static mut LED: gpio::gpioc::PC13<gpio::Output<gpio::PushPull>> = ();
-
   static mut INPUT: InputPins = ();
 
   static mut USB_DEV: UsbDevice<'static, UsbBus<UsbPinsType>> = ();
@@ -116,9 +114,6 @@ const APP: () = {
     let mut gpiob = device.GPIOB.split(&mut rcc.apb2);
     let mut gpioc = device.GPIOC.split(&mut rcc.apb2);
     let mut gpiod = device.GPIOD.split(&mut rcc.apb2);
-
-    let mut led = gpioc.pc13.into_push_pull_output(&mut gpioc.crh);
-    led.set_high();
 
     let input = InputPins {
       stick_down: gpiob.pb5.into_pull_up_input(&mut gpiob.crl),
@@ -204,7 +199,6 @@ const APP: () = {
 
     schedule.input_poll(Instant::now() + 72_000.cycles()).unwrap();
 
-    LED = led;
     INPUT = input;
     USB_DEV = usb_dev;
     USB_HID = usb_hid;
@@ -275,10 +269,8 @@ const APP: () = {
     schedule.input_poll(scheduled + 72_000.cycles()).unwrap();
   }
 
-  #[task(priority = 16, schedule = [timer_tick], resources = [LED])]
+  #[task(priority = 16, schedule = [timer_tick])]
   fn timer_tick() {
-    resources.LED.toggle();
-
     #[cfg(not(feature = "no_serial"))]
     unsafe {
       if let Some(ref mut buffered_serial) = SERIAL {
