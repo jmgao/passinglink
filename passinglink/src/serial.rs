@@ -93,7 +93,7 @@ impl BufferedSerial {
         tx,
         buffer: unsafe { Queue::u16_sc() },
         seconds: 0,
-        cycles: 0,
+        cycles: DWT::get_cycle_count(),
       }),
     }
   }
