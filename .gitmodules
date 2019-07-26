@@ -17,3 +17,7 @@
 	path = vendor/ring
 	url = https://github.com/jmgao/ring.git
 	branch = hacks
+[submodule "vendor/cortex-m-rtfm"]
+	path = vendor/cortex-m-rtfm
+	url = https://github.com/jmgao/cortex-m-rtfm.git
+	branch = v0.4.3-jmgao
