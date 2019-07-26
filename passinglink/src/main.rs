@@ -94,7 +94,7 @@ const APP: () = {
   static mut USB_DEV: UsbDevice<'static, UsbBus<UsbPinsType>> = ();
   static mut USB_HID: hid::HidClass<'static, hid::PS4Hid, UsbBus<UsbPinsType>> = ();
 
-  #[init(schedule = [timer_tick, input_poll])]
+  #[init]
   fn init() {
     static mut USB_BUS: Option<bus::UsbBusAllocator<UsbBus<UsbPinsType>>> = None;
 
@@ -172,9 +172,6 @@ const APP: () = {
       }
     }
 
-    info!("passinglink v{} initialized", VERSION);
-    schedule.timer_tick(Instant::now() + 72_00_000.cycles()).unwrap();
-
     // BluePill board has a pull-up resistor on the D+ line.
     // Pull the D+ pin down to send a RESET condition to the USB bus.
     let mut usb_dp = gpioa.pa12.into_push_pull_output(&mut gpioa.crh);
@@ -196,8 +193,6 @@ const APP: () = {
       .max_power(500)
       .max_packet_size_0(64)
       .build();
-
-    schedule.input_poll(Instant::now() + 72_000.cycles()).unwrap();
 
     INPUT = input;
     USB_DEV = usb_dev;
@@ -306,10 +301,18 @@ const APP: () = {
     fn EXTI1();
   }
 
-  #[idle]
+  #[idle(schedule = [timer_tick, input_poll])]
   fn idle() -> ! {
+    schedule.timer_tick(Instant::now() + 72_000_000.cycles()).unwrap();
+    schedule.input_poll(Instant::now() + 72_000.cycles()).unwrap();
+
+    info!("passinglink v{} initialized", VERSION);
+
     auth::read_keypair();
+    info!("ds4 keypair loaded");
+
     allocator::dump_state();
+
     auth::perform_work();
   }
 };
