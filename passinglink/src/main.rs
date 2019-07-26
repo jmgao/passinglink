@@ -173,7 +173,7 @@ const APP: () = {
     }
 
     info!("passinglink v{} initialized", VERSION);
-    schedule.timer_tick(Instant::now() + 7_200_000.cycles()).unwrap();
+    schedule.timer_tick(Instant::now() + 72_00_000.cycles()).unwrap();
 
     // BluePill board has a pull-up resistor on the D+ line.
     // Pull the D+ pin down to send a RESET condition to the USB bus.
