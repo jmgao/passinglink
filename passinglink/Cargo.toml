@@ -24,7 +24,7 @@ stm32f1xx-hal = { path = "../vendor/stm32f1xx-hal", features = ["rt", "stm32f103
 usb-device = { path = "../vendor/usb-device" }
 stm32-usbd = { version = "0.3.0", features = ["stm32f103xx"] }
 
-crc = { version = "^1.0.0", default-features = false, features = [] }
+crc = { version = "1.8.1", default-features = false, features = [] }
 ds4auth = { path = "../ds4auth" }
 
 [patch.crates-io]
