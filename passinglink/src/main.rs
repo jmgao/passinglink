@@ -95,9 +95,10 @@ const APP: () = {
   static mut USB_HID: hid::HidClass<'static, hid::PS4Hid, UsbBus<UsbPinsType>> = ();
 
   #[init]
-  fn init() {
+  fn init(c: init::Context) -> init::LateResources {
     static mut USB_BUS: Option<bus::UsbBusAllocator<UsbBus<UsbPinsType>>> = None;
 
+    let device = c.device;
     let mut flash = device.FLASH.constrain();
     let mut rcc = device.RCC.constrain();
 
@@ -194,13 +195,16 @@ const APP: () = {
       .max_packet_size_0(64)
       .build();
 
-    INPUT = input;
-    USB_DEV = usb_dev;
-    USB_HID = usb_hid;
+    init::LateResources {
+      INPUT: input,
+      USB_DEV: usb_dev,
+      USB_HID: usb_hid,
+    }
   }
 
   #[task(priority = 1, schedule = [input_poll], resources = [INPUT, USB_DEV, USB_HID])]
-  fn input_poll() {
+  fn input_poll(c: input_poll::Context) {
+    let mut resources = c.resources;
     interrupt::free(|_| unsafe {
       OUTPUT.button_north.set_value(resources.INPUT.button_north.is_low());
       OUTPUT.button_east.set_value(resources.INPUT.button_east.is_low());
@@ -261,11 +265,11 @@ const APP: () = {
     });
 
     resources.USB_HID.send();
-    schedule.input_poll(scheduled + 72_000.cycles()).unwrap();
+    c.schedule.input_poll(c.scheduled + 72_000.cycles()).unwrap();
   }
 
   #[task(priority = 16, schedule = [timer_tick])]
-  fn timer_tick() {
+  fn timer_tick(c: timer_tick::Context) {
     #[cfg(not(feature = "no_serial"))]
     unsafe {
       if let Some(ref mut buffered_serial) = SERIAL {
@@ -273,12 +277,12 @@ const APP: () = {
       }
     }
 
-    schedule.timer_tick(scheduled + 72_000_000.cycles()).unwrap();
+    c.schedule.timer_tick(c.scheduled + 72_000_000.cycles()).unwrap();
   }
 
   #[interrupt]
   #[cfg(not(feature = "no_serial"))]
-  fn USART2() {
+  fn USART2(_: USART2::Context) {
     unsafe {
       if let Some(ref mut serial) = SERIAL {
         serial.poll();
@@ -287,13 +291,13 @@ const APP: () = {
   }
 
   #[interrupt(resources = [USB_DEV, USB_HID])]
-  fn USB_HP_CAN_TX() {
-    usb_poll(&mut resources.USB_DEV, &mut resources.USB_HID);
+  fn USB_HP_CAN_TX(mut c: USB_HP_CAN_TX::Context) {
+    usb_poll(&mut c.resources.USB_DEV, &mut c.resources.USB_HID);
   }
 
   #[interrupt(resources = [USB_DEV, USB_HID])]
-  fn USB_LP_CAN_RX0() {
-    usb_poll(&mut resources.USB_DEV, &mut resources.USB_HID);
+  fn USB_LP_CAN_RX0(mut c: USB_LP_CAN_RX0::Context) {
+    usb_poll(&mut c.resources.USB_DEV, &mut c.resources.USB_HID);
   }
 
   extern "C" {
@@ -302,9 +306,9 @@ const APP: () = {
   }
 
   #[idle(schedule = [timer_tick, input_poll])]
-  fn idle() -> ! {
-    schedule.timer_tick(Instant::now() + 72_000_000.cycles()).unwrap();
-    schedule.input_poll(Instant::now() + 72_000.cycles()).unwrap();
+  fn idle(c: idle::Context) -> ! {
+    c.schedule.timer_tick(Instant::now() + 72_000_000.cycles()).unwrap();
+    c.schedule.input_poll(Instant::now() + 72_000.cycles()).unwrap();
 
     info!("passinglink v{} initialized", VERSION);
 
