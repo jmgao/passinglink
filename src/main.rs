@@ -22,7 +22,7 @@ use stm32f1xx_hal::gpio;
 use stm32f1xx_hal::prelude::*;
 use stm32f1xx_hal::serial::{Parity, Serial, StopBits};
 
-use stm32f103xx_usb::UsbBus;
+use stm32_usbd::{UsbBus, UsbBusType};
 use usb_device::bus;
 use usb_device::prelude::*;
 
@@ -44,12 +44,12 @@ static mut INPUTS: DeviceInputs = DeviceInputs::default();
 const APP: () = {
   static mut LED: gpio::gpioc::PC13<gpio::Output<gpio::PushPull>> = ();
 
-  static mut USB_DEV: UsbDevice<'static, UsbBus> = ();
-  static mut USB_HID: hid::HidClass<'static, hid::PS4Hid, UsbBus> = ();
+  static mut USB_DEV: UsbDevice<'static, UsbBusType> = ();
+  static mut USB_HID: hid::HidClass<'static, hid::PS4Hid, UsbBusType> = ();
 
   #[init(schedule = [timer_tick, input_poll])]
   fn init() {
-    static mut USB_BUS: Option<bus::UsbBusAllocator<UsbBus>> = None;
+    static mut USB_BUS: Option<bus::UsbBusAllocator<UsbBusType>> = None;
 
     let mut flash = device.FLASH.constrain();
     let mut rcc = device.RCC.constrain();
@@ -99,17 +99,20 @@ const APP: () = {
     info!("passinglink v{} initialized", VERSION);
     schedule.timer_tick(Instant::now() + 7_200_000.cycles()).unwrap();
 
-    *USB_BUS = Some(UsbBus::usb_with_reset(
-      device.USB,
-      &mut rcc.apb1,
-      &clocks,
-      &mut gpioa.crh,
-      gpioa.pa12,
-    ));
+    // BluePill board has a pull-up resistor on the D+ line.
+    // Pull the D+ pin down to send a RESET condition to the USB bus.
+    let mut usb_dp = gpioa.pa12.into_push_pull_output(&mut gpioa.crh);
+    usb_dp.set_low();
+    cortex_m::asm::delay(clocks.sysclk().0 / 100);
+
+    let usb_dm = gpioa.pa11;
+    let usb_dp = usb_dp.into_floating_input(&mut gpioa.crh);
+
+    *USB_BUS = Some(UsbBus::new(device.USB, (usb_dm, usb_dp)));
 
     let ps4_hid = hid::PS4Hid::new(unsafe { &mut INPUTS as *mut DeviceInputs });
     let usb_hid = hid::HidClass::new(ps4_hid, USB_BUS.as_ref().unwrap());
-    let mut usb_dev = UsbDeviceBuilder::new(USB_BUS.as_ref().unwrap(), UsbVidPid(0x1209, 0x214D))
+    let usb_dev = UsbDeviceBuilder::new(USB_BUS.as_ref().unwrap(), UsbVidPid(0x1209, 0x214D))
       .manufacturer("jmgao")
       .product("Passing Link")
       .serial_number("66C623A66B214BB226X76C236B214A214CC6C236B")
@@ -118,8 +121,6 @@ const APP: () = {
       .max_power(500)
       .max_packet_size_0(64)
       .build();
-
-    usb_dev.force_reset().expect("reset failed");
 
     schedule.input_poll(Instant::now() + 72_000.cycles()).unwrap();
 
