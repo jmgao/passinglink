@@ -85,6 +85,11 @@ pub struct InputPins {
   button_select: gpio::gpioc::PC8<gpio::Input<PullUp>>,
 
   button_trackpad: gpio::gpioa::PA6<gpio::Input<PullUp>>,
+
+  mode_lock: gpio::gpiob::PB0<gpio::Input<PullUp>>,
+  mode_ls: gpio::gpioc::PC5<gpio::Input<PullUp>>,
+  mode_rs: gpio::gpioc::PC4<gpio::Input<PullUp>>,
+  mode_ps3: gpio::gpiob::PB10<gpio::Input<PullUp>>,
 }
 
 #[app(device = stm32f1xx_hal::stm32)]
@@ -139,6 +144,11 @@ const APP: () = {
       button_start: gpioc.pc7.into_pull_up_input(&mut gpioc.crl),
       button_select: gpioc.pc8.into_pull_up_input(&mut gpioc.crh),
       button_trackpad: gpioa.pa6.into_pull_up_input(&mut gpioa.crl),
+
+      mode_lock: gpiob.pb0.into_pull_up_input(&mut gpiob.crl),
+      mode_ls: gpioc.pc5.into_pull_up_input(&mut gpioc.crl),
+      mode_rs: gpioc.pc4.into_pull_up_input(&mut gpioc.crl),
+      mode_ps3: gpiob.pb10.into_pull_up_input(&mut gpiob.crh),
     };
 
     #[cfg(not(feature = "no_serial"))]
@@ -216,9 +226,16 @@ const APP: () = {
       OUTPUT.button_l3.set_value(resources.INPUT.button_l3.is_low());
       OUTPUT.button_r3.set_value(resources.INPUT.button_r3.is_low());
 
-      OUTPUT.button_home.set_value(resources.INPUT.button_home.is_low());
-      OUTPUT.button_start.set_value(resources.INPUT.button_start.is_low());
-      OUTPUT.button_select.set_value(resources.INPUT.button_select.is_low());
+      if !resources.INPUT.mode_lock.is_low() {
+        OUTPUT.button_home.set_value(resources.INPUT.button_home.is_low());
+        OUTPUT.button_start.set_value(resources.INPUT.button_start.is_low());
+        OUTPUT.button_select.set_value(resources.INPUT.button_select.is_low());
+      }
+
+      let _ = resources.INPUT.mode_ls.is_low();
+      let _ = resources.INPUT.mode_rs.is_low();
+      let _ = resources.INPUT.mode_ps3.is_low();
+
       OUTPUT
         .button_trackpad
         .set_value(resources.INPUT.button_trackpad.is_low());
