@@ -21,7 +21,7 @@ cortex-m-rtfm = { version = "0.4", path = "../vendor/cortex-m-rtfm", features = 
 proper = { path = "../vendor/proper" }
 heapless = { path = "../vendor/heapless" }
 stm32f1xx-hal = { path = "../vendor/stm32f1xx-hal", features = ["rt", "stm32f103"] }
-usb-device = { path = "../vendor/usb-device" }
+usb-device = { version = "0.2.2", features = ["control-buffer-256"] }
 stm32-usbd = { version = "0.3.0", features = ["stm32f103xx"] }
 
 crc = { version = "1.8.1", default-features = false, features = [] }
@@ -29,7 +29,6 @@ ds4auth = { path = "../ds4auth" }
 
 [patch.crates-io]
 stm32f1xx-hal = { path = "../vendor/stm32f1xx-hal" }
-usb-device = { path = "../vendor/usb-device" }
 
 [features]
 default = ["color"]
