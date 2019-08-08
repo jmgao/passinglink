@@ -38,7 +38,7 @@ fn crc(data: &[u8]) -> u32 {
 
 pub fn read_keypair() {
   unsafe {
-    KEYPAIR = Some(ds4auth::DS4Key::embedded().unwrap());
+    KEYPAIR = ds4auth::DS4Key::embedded();
   }
 }
 
@@ -185,7 +185,7 @@ pub fn perform_work() -> ! {
       unsafe {
         nonce.copy_from_slice(&DATA[0..256]);
       }
-      if let Some(signature) = unsafe { KEYPAIR.as_ref().unwrap().sign(&nonce) } {
+      if let Some(signature) = unsafe { KEYPAIR.as_ref().and_then(|kp| kp.sign(&nonce)) } {
         unsafe {
           DATA[..].copy_from_slice(signature.as_bytes());
         }
