@@ -60,6 +60,48 @@ static mut SERIAL: Option<serial::BufferedSerial> = None;
 
 static mut OUTPUT: DeviceInputs = DeviceInputs::default();
 
+trait InfallibleInputPin {
+  fn is_low(&self) -> bool;
+  fn is_high(&self) -> bool;
+}
+
+impl<T: embedded_hal::digital::v2::InputPin> InfallibleInputPin for T {
+  fn is_low(&self) -> bool {
+    if let Ok(result) = embedded_hal::digital::v2::InputPin::is_low(self) {
+      result
+    } else {
+      panic!("failed to read from InputPin");
+    }
+  }
+
+  fn is_high(&self) -> bool {
+    if let Ok(result) = embedded_hal::digital::v2::InputPin::is_high(self) {
+      result
+    } else {
+      panic!("failed to read from InputPin");
+    }
+  }
+}
+
+trait InfallibleOutputPin {
+  fn set_low(&mut self);
+  fn set_high(&mut self);
+}
+
+impl<T: embedded_hal::digital::v2::OutputPin> InfallibleOutputPin for T {
+  fn set_low(&mut self) {
+    if let Err(_) = embedded_hal::digital::v2::OutputPin::set_low(self) {
+      panic!("failed to write to OutputPin");
+    }
+  }
+
+  fn set_high(&mut self) {
+    if let Err(_) = embedded_hal::digital::v2::OutputPin::set_high(self) {
+      panic!("failed to write to OutputPin");
+    }
+  }
+}
+
 pub struct InputPins {
   stick_down: gpio::gpiob::PB5<gpio::Input<PullUp>>,
   stick_up: gpio::gpiob::PB6<gpio::Input<PullUp>>,

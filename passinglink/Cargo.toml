@@ -17,10 +17,12 @@ cortex-m-rt = { version = "0.6.9", features = ["device"] }
 cortex-m-semihosting = { version = "0.3.3", features = ["inline-asm"] }
 panic-semihosting = { version = "0.5", features = ["inline-asm"] }
 
+embedded-hal = { version = "0.2.3" }
+stm32f1xx-hal = { path = "../vendor/stm32f1xx-hal", features = ["rt", "stm32f103"] }
+
 cortex-m-rtfm = { version = "0.4", path = "../vendor/cortex-m-rtfm", features = ["timer-queue", "nightly"] }
 proper = { path = "../vendor/proper" }
 heapless = { path = "../vendor/heapless" }
-stm32f1xx-hal = { path = "../vendor/stm32f1xx-hal", features = ["rt", "stm32f103"] }
 usb-device = { version = "0.2.2", features = ["control-buffer-256"] }
 stm32-usbd = { version = "0.3.0", features = ["stm32f103xx"] }
 
