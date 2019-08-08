@@ -220,8 +220,13 @@ const APP: () = {
       OUTPUT.button_l1.set_value(resources.INPUT.button_l1.is_low());
       OUTPUT.button_r1.set_value(resources.INPUT.button_r1.is_low());
 
-      OUTPUT.button_l2.set_value(resources.INPUT.button_l2.is_low());
-      OUTPUT.button_r2.set_value(resources.INPUT.button_r2.is_low());
+      let l2 = resources.INPUT.button_l2.is_low();
+      OUTPUT.button_l2.set_value(l2);
+      OUTPUT.axis_left_trigger.set_value(if l2 { 255 } else { 0 });
+
+      let r2 = resources.INPUT.button_r2.is_low();
+      OUTPUT.button_r2.set_value(r2);
+      OUTPUT.axis_right_trigger.set_value(if r2 { 255 } else { 0 });
 
       OUTPUT.button_l3.set_value(resources.INPUT.button_l3.is_low());
       OUTPUT.button_r3.set_value(resources.INPUT.button_r3.is_low());
