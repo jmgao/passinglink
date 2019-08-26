@@ -19,3 +19,9 @@
 	path = vendor/cortex-m-rtfm
 	url = https://github.com/jmgao/cortex-m-rtfm.git
 	branch = v0.4.3-jmgao
+[submodule "pcb/lib/PCB-USB-C"]
+	path = pcb/lib/PCB-USB-C
+	url = https://github.com/jmgao/PCB-USB-C.git
+[submodule "pcb/lib/fm-b2020rgba-hg"]
+	path = pcb/lib/fm-b2020rgba-hg
+	url = https://github.com/jmgao/fm-b2020rgba-hg.git
