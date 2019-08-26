@@ -3,24 +3,8 @@
 Passing Link is an implementation of a PS4-compatible USB input device on the inexpensive STM32F103
 microcontroller, for which entire Blue Pill development boards can be purchased for under $2 shipped.
 
-Currently, support for all inputs except for touchpad gestures and gyro have been implemented. The
-PS4 controller authentication scheme has not yet been implemented, so the controller must be reset
-every 10 minutes to be used with an actual PS4.
-
-### Goals
-Short term:
-- [ ] PS4 authentication via extracted private key
-
-Long-term:
-- [ ] PS4 audio support
-- [ ] USB HID input (to support arcade cabinets with fixed controls overridable by USB input)
-- [ ] Custom PCB design
-
-Maybe:
-- [ ] PS4 authentication via passthrough to real PS4 controller
-
-Probably not:
-- [ ] Flashing firmware via USB (probably won't fit on 64kB flash variants)
+Currently, support for all inputs except for touchpad gestures and gyro have been implemented. PS4
+authentication is supported, if you dump the keys from a licensed PS4 controller.
 
 ### Getting started
 
