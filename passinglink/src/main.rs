@@ -32,8 +32,6 @@ use cortex_m::interrupt;
 use rtfm::app;
 use rtfm::Instant;
 
-use stm32f1xx_hal::gpio;
-use stm32f1xx_hal::gpio::PullUp;
 use stm32f1xx_hal::prelude::*;
 
 #[cfg(not(feature = "no_serial"))]
@@ -49,6 +47,10 @@ mod hid;
 mod input;
 use input::DeviceInputs;
 use input::Hat;
+
+#[macro_use]
+mod pins;
+use pins::*;
 
 #[cfg(not(feature = "no_serial"))]
 mod serial;
@@ -102,41 +104,10 @@ impl<T: embedded_hal::digital::v2::OutputPin> InfallibleOutputPin for T {
   }
 }
 
-pub struct InputPins {
-  stick_down: gpio::gpiob::PB5<gpio::Input<PullUp>>,
-  stick_up: gpio::gpiob::PB6<gpio::Input<PullUp>>,
-  stick_left: gpio::gpiob::PB7<gpio::Input<PullUp>>,
-  stick_right: gpio::gpiob::PB8<gpio::Input<PullUp>>,
-
-  button_north: gpio::gpioc::PC11<gpio::Input<PullUp>>,
-  button_east: gpio::gpioa::PA9<gpio::Input<PullUp>>,
-  button_south: gpio::gpioa::PA10<gpio::Input<PullUp>>,
-  button_west: gpio::gpioc::PC10<gpio::Input<PullUp>>,
-
-  button_l1: gpio::gpiod::PD2<gpio::Input<PullUp>>,
-  button_r1: gpio::gpioc::PC12<gpio::Input<PullUp>>,
-
-  button_l2: gpio::gpioc::PC9<gpio::Input<PullUp>>,
-  button_r2: gpio::gpioa::PA8<gpio::Input<PullUp>>,
-
-  button_l3: gpio::gpioa::PA7<gpio::Input<PullUp>>,
-  button_r3: gpio::gpiob::PB11<gpio::Input<PullUp>>,
-
-  button_home: gpio::gpiob::PB1<gpio::Input<PullUp>>,
-  button_start: gpio::gpioc::PC7<gpio::Input<PullUp>>,
-  button_select: gpio::gpioc::PC8<gpio::Input<PullUp>>,
-
-  button_trackpad: gpio::gpioa::PA6<gpio::Input<PullUp>>,
-
-  mode_lock: gpio::gpiob::PB0<gpio::Input<PullUp>>,
-  mode_ls: gpio::gpioc::PC5<gpio::Input<PullUp>>,
-  mode_rs: gpio::gpioc::PC4<gpio::Input<PullUp>>,
-  mode_ps3: gpio::gpiob::PB10<gpio::Input<PullUp>>,
-}
-
 #[app(device = stm32f1xx_hal::stm32)]
 const APP: () = {
   static mut INPUT: InputPins = ();
+  static mut LED: LedPins = ();
 
   static mut USB_DEV: UsbDevice<'static, UsbBus<UsbPinsType>> = ();
   static mut USB_HID: hid::HidClass<'static, hid::PS4Hid, UsbBus<UsbPinsType>> = ();
@@ -162,36 +133,8 @@ const APP: () = {
     let mut gpioc = device.GPIOC.split(&mut rcc.apb2);
     let mut gpiod = device.GPIOD.split(&mut rcc.apb2);
 
-    let input = InputPins {
-      stick_down: gpiob.pb5.into_pull_up_input(&mut gpiob.crl),
-      stick_up: gpiob.pb6.into_pull_up_input(&mut gpiob.crl),
-      stick_left: gpiob.pb7.into_pull_up_input(&mut gpiob.crl),
-      stick_right: gpiob.pb8.into_pull_up_input(&mut gpiob.crh),
-
-      button_north: gpioc.pc11.into_pull_up_input(&mut gpioc.crh),
-      button_east: gpioa.pa9.into_pull_up_input(&mut gpioa.crh),
-      button_south: gpioa.pa10.into_pull_up_input(&mut gpioa.crh),
-      button_west: gpioc.pc10.into_pull_up_input(&mut gpioc.crh),
-
-      button_l1: gpiod.pd2.into_pull_up_input(&mut gpiod.crl),
-      button_r1: gpioc.pc12.into_pull_up_input(&mut gpioc.crh),
-
-      button_l2: gpioc.pc9.into_pull_up_input(&mut gpioc.crh),
-      button_r2: gpioa.pa8.into_pull_up_input(&mut gpioa.crh),
-
-      button_l3: gpioa.pa7.into_pull_up_input(&mut gpioa.crl),
-      button_r3: gpiob.pb11.into_pull_up_input(&mut gpiob.crh),
-
-      button_home: gpiob.pb1.into_pull_up_input(&mut gpiob.crl),
-      button_start: gpioc.pc7.into_pull_up_input(&mut gpioc.crl),
-      button_select: gpioc.pc8.into_pull_up_input(&mut gpioc.crh),
-      button_trackpad: gpioa.pa6.into_pull_up_input(&mut gpioa.crl),
-
-      mode_lock: gpiob.pb0.into_pull_up_input(&mut gpiob.crl),
-      mode_ls: gpioc.pc5.into_pull_up_input(&mut gpioc.crl),
-      mode_rs: gpioc.pc4.into_pull_up_input(&mut gpioc.crl),
-      mode_ps3: gpiob.pb10.into_pull_up_input(&mut gpiob.crh),
-    };
+    let input = assign_inputs!(gpioa, gpiob, gpioc, gpiod);
+    let led = assign_leds!(gpioa, gpiob, gpioc, gpiod);
 
     #[cfg(not(feature = "no_serial"))]
     {
@@ -247,6 +190,7 @@ const APP: () = {
       .build();
 
     INPUT = input;
+    LED = led;
     USB_DEV = usb_dev;
     USB_HID = usb_hid;
   }
