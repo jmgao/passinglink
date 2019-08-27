@@ -4,41 +4,70 @@ const SIZE_CLASS_128: usize = 11;
 const SIZE_CLASS_256: usize = 10;
 const SIZE_CLASS_512: usize = 1;
 
-pub struct Counter {
-  current: u8,
-  hwm: u8,
-}
-
-impl Counter {
-  const fn new() -> Counter {
-    Counter { current: 0, hwm: 0 }
+#[cfg(feature = "alloc_counter")]
+mod counter {
+  pub struct Counter {
+    current: u8,
+    hwm: u8,
   }
 
-  pub fn increment(&mut self) {
-    self.current += 1;
-    if self.current > self.hwm {
-      self.hwm = self.current;
+  impl Counter {
+    pub const fn new() -> Counter {
+      Counter { current: 0, hwm: 0 }
+    }
+
+    pub fn increment(&mut self) {
+      self.current += 1;
+      if self.current > self.hwm {
+        self.hwm = self.current;
+      }
+    }
+
+    pub fn decrement(&mut self) {
+      self.current -= 1;
+    }
+
+    pub fn current(&self) -> u8 {
+      self.current
+    }
+
+    pub fn hwm(&self) -> u8 {
+      self.hwm
     }
   }
 
-  pub fn decrement(&mut self) {
-    self.current -= 1;
-  }
-
-  pub fn current(&self) -> u8 {
-    self.current
-  }
-
-  pub fn hwm(&self) -> u8 {
-    self.hwm
+  impl core::fmt::Debug for Counter {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+      write!(f, "current = {}, hwm = {}", self.current(), self.hwm())
+    }
   }
 }
 
-impl core::fmt::Debug for Counter {
-  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    write!(f, "current = {}, hwm = {}", self.current(), self.hwm())
+#[cfg(not(feature = "alloc_counter"))]
+mod counter {
+  pub struct Counter {
+  }
+
+  impl Counter {
+    pub const fn new() -> Counter {
+      Counter {}
+    }
+
+    pub fn increment(&mut self) {
+    }
+
+    pub fn decrement(&mut self) {
+    }
+  }
+
+  impl core::fmt::Debug for Counter {
+    fn fmt(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+      Ok(())
+    }
   }
 }
+
+use counter::*;
 
 static mut BUF_128: [[u8; 128]; SIZE_CLASS_128] = [[0u8; 128]; SIZE_CLASS_128];
 static mut USED_128: [bool; SIZE_CLASS_128] = [false; SIZE_CLASS_128];
@@ -61,11 +90,13 @@ impl Allocator {
 }
 
 pub fn dump_state() {
-  unsafe {
-    info!("allocator state:");
-    info!("  128: {:?}", COUNTER_128);
-    info!("  256: {:?}", COUNTER_256);
-    info!("  512: {:?}", COUNTER_512);
+  if cfg!(feature = "alloc_counter") {
+    unsafe {
+      info!("allocator state:");
+      info!("  128: {:?}", COUNTER_128);
+      info!("  256: {:?}", COUNTER_256);
+      info!("  512: {:?}", COUNTER_512);
+    }
   }
 }
 
