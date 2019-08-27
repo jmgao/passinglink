@@ -36,4 +36,8 @@ stm32f1xx-hal = { path = "../vendor/stm32f1xx-hal" }
 default = ["color"]
 color = []
 no_serial = ["log/max_level_off", "log/release_max_level_off"]
+
+# Hardware targets:
 "0.3" = []
+"0.4" = []
+bluepill = ["no_serial"]

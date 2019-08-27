@@ -95,7 +95,7 @@ mod detail {
 }
 
 // 0.4.
-#[cfg(not(feature = "0.3"))]
+#[cfg(all(not(feature = "0.3"), not(feature="bluepill")))]
 #[macro_use]
 mod detail {
   use stm32f1xx_hal::gpio::gpioa::*;
@@ -189,4 +189,97 @@ mod detail {
   }
 }
 
+// Bluepill
+#[cfg(feature = "bluepill")]
+#[macro_use]
+mod detail {
+  use stm32f1xx_hal::gpio::gpioa::*;
+  use stm32f1xx_hal::gpio::gpiob::*;
+  use stm32f1xx_hal::gpio::gpioc::*;
+  use stm32f1xx_hal::gpio::{Input, Output, PullUp, PushPull};
+
+  pub struct InputPins {
+    pub stick_down: PB9<Input<PullUp>>,
+    pub stick_up: PB8<Input<PullUp>>,
+    pub stick_left: PB7<Input<PullUp>>,
+    pub stick_right: PB6<Input<PullUp>>,
+
+    pub button_north: PC14<Input<PullUp>>,
+    pub button_east: PC15<Input<PullUp>>,
+    pub button_south: PA0<Input<PullUp>>,
+    pub button_west: PA1<Input<PullUp>>,
+
+    pub button_l1: PA4<Input<PullUp>>,
+    pub button_r1: PA5<Input<PullUp>>,
+
+    pub button_l2: PA6<Input<PullUp>>,
+    pub button_r2: PA7<Input<PullUp>>,
+
+    pub button_l3: PB0<Input<PullUp>>,
+    pub button_r3: PB1<Input<PullUp>>,
+
+    pub button_home: PB15<Input<PullUp>>,
+    pub button_start: PB14<Input<PullUp>>,
+    pub button_select: PB13<Input<PullUp>>,
+    pub button_trackpad: PB12<Input<PullUp>>,
+
+    pub mode_lock: PB5<Input<PullUp>>,
+    pub mode_ls: PA10<Input<PullUp>>,
+    pub mode_rs: PA9<Input<PullUp>>,
+    pub mode_ps3: PA8<Input<PullUp>>,
+  }
+
+  macro_rules! assign_inputs {
+    ($gpioa: expr, $gpiob: expr, $gpioc: expr, $gpiod: expr) => {{
+      InputPins {
+        stick_down: $gpiob.pb9.into_pull_up_input(&mut $gpiob.crh),
+        stick_up: $gpiob.pb8.into_pull_up_input(&mut $gpiob.crh),
+        stick_left: $gpiob.pb7.into_pull_up_input(&mut $gpiob.crl),
+        stick_right: $gpiob.pb6.into_pull_up_input(&mut $gpiob.crl),
+
+        button_north: $gpioc.pc14.into_pull_up_input(&mut $gpioc.crh),
+        button_east: $gpioc.pc15.into_pull_up_input(&mut $gpioc.crh),
+        button_south: $gpioa.pa0.into_pull_up_input(&mut $gpioa.crl),
+        button_west: $gpioa.pa1.into_pull_up_input(&mut $gpioa.crl),
+
+        button_l1: $gpioa.pa4.into_pull_up_input(&mut $gpioa.crl),
+        button_r1: $gpioa.pa5.into_pull_up_input(&mut $gpioa.crl),
+
+        button_l2: $gpioa.pa6.into_pull_up_input(&mut $gpioa.crl),
+        button_r2: $gpioa.pa7.into_pull_up_input(&mut $gpioa.crl),
+
+        button_l3: $gpiob.pb0.into_pull_up_input(&mut $gpiob.crl),
+        button_r3: $gpiob.pb1.into_pull_up_input(&mut $gpiob.crl),
+
+        button_home: $gpiob.pb15.into_pull_up_input(&mut $gpiob.crh),
+        button_start: $gpiob.pb14.into_pull_up_input(&mut $gpiob.crh),
+        button_select: $gpiob.pb13.into_pull_up_input(&mut $gpiob.crh),
+        button_trackpad: $gpiob.pb12.into_pull_up_input(&mut $gpiob.crh),
+
+        mode_lock: $gpiob.pb5.into_pull_up_input(&mut $gpiob.crl),
+        mode_ls: $gpioa.pa10.into_pull_up_input(&mut $gpioa.crh),
+        mode_rs: $gpioa.pa9.into_pull_up_input(&mut $gpioa.crh),
+        mode_ps3: $gpioa.pa8.into_pull_up_input(&mut $gpioa.crh),
+      }
+    }};
+  }
+
+  pub struct LedPins {
+    pub front: PC13<Output<PushPull>>,
+    pub pcb_r: Option<PAx<Output<PushPull>>>,
+    pub pcb_g: Option<PAx<Output<PushPull>>>,
+    pub pcb_b: Option<PAx<Output<PushPull>>>,
+  }
+
+  macro_rules! assign_leds {
+    ($gpioa: expr, $gpiob: expr, $gpioc: expr, $gpiod: expr) => {{
+      LedPins {
+        front: $gpioc.pc13.into_push_pull_output(&mut $gpioc.crh),
+        pcb_r: None,
+        pcb_g: None,
+        pcb_b: None,
+      }
+    }}
+  }
+}
 pub use detail::*;
