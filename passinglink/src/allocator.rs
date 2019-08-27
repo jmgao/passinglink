@@ -1,8 +1,8 @@
 use core::alloc::{GlobalAlloc, Layout};
 
-const SIZE_CLASS_128: usize = 22;
-const SIZE_CLASS_256: usize = 20;
-const SIZE_CLASS_512: usize = 5;
+const SIZE_CLASS_128: usize = 11;
+const SIZE_CLASS_256: usize = 10;
+const SIZE_CLASS_512: usize = 1;
 
 pub struct Counter {
   current: u8,
