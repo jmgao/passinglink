@@ -1,0 +1,36 @@
+[package]
+name = "pl_bootloader"
+authors = ["Josh Gao <josh@jmgao.dev>"]
+license = "MIT"
+
+version = "0.0.0"
+edition = "2018"
+
+[build-dependencies]
+ds4auth = { path = "../ds4auth" }
+
+[dependencies]
+log = { version = "0.4" }
+
+cortex-m = { version = "0.6", features = ["inline-asm", "const-fn"] }
+cortex-m-rt = { version = "0.6.9", features = ["device"] }
+cortex-m-semihosting = { version = "0.3.3", features = ["inline-asm"] }
+panic-semihosting = { version = "0.5", features = ["inline-asm"] }
+
+embedded-hal = { version = "0.2.3" }
+stm32f1xx-hal = { path = "../vendor/stm32f1xx-hal", features = ["rt", "stm32f103"] }
+
+cortex-m-rtfm = { version = "0.4", path = "../vendor/cortex-m-rtfm", features = ["timer-queue", "nightly"] }
+proper = { path = "../vendor/proper" }
+heapless = { path = "../vendor/heapless" }
+usb-device = { version = "0.2.2", features = ["control-buffer-256"] }
+stm32-usbd = { version = "0.3.0", features = ["stm32f103xx"] }
+
+crc = { version = "1.8.1", default-features = false, features = [] }
+
+[patch.crates-io]
+stm32f1xx-hal = { path = "../vendor/stm32f1xx-hal" }
+
+[features]
+default = ["no_serial"]
+no_serial = ["log/max_level_off", "log/release_max_level_off"]
