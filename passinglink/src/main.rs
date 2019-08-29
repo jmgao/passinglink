@@ -255,17 +255,34 @@ const APP: () = {
         (false, false) => None,
       };
 
-      OUTPUT.hat_dpad = match (horizontal, vertical) {
-        (None, None) => Hat::Neutral,
-        (Some(true), None) => Hat::East,
-        (Some(true), Some(false)) => Hat::SouthEast,
-        (None, Some(false)) => Hat::South,
-        (Some(false), Some(false)) => Hat::SouthWest,
-        (Some(false), None) => Hat::West,
-        (Some(false), Some(true)) => Hat::NorthWest,
-        (None, Some(true)) => Hat::North,
-        (Some(true), Some(true)) => Hat::NorthEast,
-      };
+      if resources.INPUT.mode_ls.is_low() {
+        OUTPUT.hat_dpad = Hat::Neutral;
+        OUTPUT.axis_left_stick_x.set_value(match horizontal {
+          Some(true) => 255,
+          None => 127,
+          Some(false) => 0,
+        });
+        OUTPUT.axis_left_stick_y.set_value(match vertical {
+          Some(true) => 0,
+          None => 127,
+          Some(false) => 255,
+        });
+      } else {
+        // RS is stupid, use DPad for that as well.
+        OUTPUT.hat_dpad = match (horizontal, vertical) {
+          (None, None) => Hat::Neutral,
+          (Some(true), None) => Hat::East,
+          (Some(true), Some(false)) => Hat::SouthEast,
+          (None, Some(false)) => Hat::South,
+          (Some(false), Some(false)) => Hat::SouthWest,
+          (Some(false), None) => Hat::West,
+          (Some(false), Some(true)) => Hat::NorthWest,
+          (None, Some(true)) => Hat::North,
+          (Some(true), Some(true)) => Hat::NorthEast,
+        };
+        OUTPUT.axis_left_stick_x.set_value(127);
+        OUTPUT.axis_left_stick_y.set_value(127);
+      }
     });
 
     resources.USB_HID.send();
