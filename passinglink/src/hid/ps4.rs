@@ -66,7 +66,7 @@ impl PS4HidReport {
       Hat::SouthWest => 5,
       Hat::West => 6,
       Hat::NorthWest => 7,
-      Hat::Neutral => 8,
+      Hat::Neutral => 15,
     };
 
     self.hat_buttons = [0, 0, 0];
