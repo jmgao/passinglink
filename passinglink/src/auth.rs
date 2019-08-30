@@ -1,4 +1,5 @@
-use core::sync::atomic::{AtomicU32, Ordering};
+use core::sync::atomic::AtomicU32;
+use core::sync::atomic::Ordering::SeqCst;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[repr(u8)]
@@ -64,7 +65,7 @@ pub fn set_nonce(bytes: &[u8]) -> Result<(), ()> {
     received_nonce_part + 1
   );
 
-  let state = AuthState::from_u32(STATE.load(Ordering::SeqCst));
+  let state = AuthState::from_u32(STATE.load(SeqCst));
   match state.state {
     AuthStateType::Waiting => {
       if received_nonce_part != 0 {
@@ -112,7 +113,7 @@ pub fn set_nonce(bytes: &[u8]) -> Result<(), ()> {
         padding: 0,
       }
       .to_u32(),
-      Ordering::SeqCst,
+      SeqCst,
     );
   } else {
     STATE.store(
@@ -123,7 +124,7 @@ pub fn set_nonce(bytes: &[u8]) -> Result<(), ()> {
         padding: 0,
       }
       .to_u32(),
-      Ordering::SeqCst,
+      SeqCst,
     );
   }
 
@@ -131,15 +132,15 @@ pub fn set_nonce(bytes: &[u8]) -> Result<(), ()> {
 }
 
 pub fn signature_ready() -> bool {
-  AuthState::from_u32(STATE.load(Ordering::SeqCst)).state == AuthStateType::SendingSignature
+  AuthState::from_u32(STATE.load(SeqCst)).state == AuthStateType::SendingSignature
 }
 
 pub fn get_nonce_id() -> u8 {
-  AuthState::from_u32(STATE.load(Ordering::SeqCst)).nonce_id
+  AuthState::from_u32(STATE.load(SeqCst)).nonce_id
 }
 
 pub fn get_signature_chunk(buf: &mut [u8]) -> Result<(), ()> {
-  let state = AuthState::from_u32(STATE.load(Ordering::SeqCst));
+  let state = AuthState::from_u32(STATE.load(SeqCst));
   if state.state != AuthStateType::SendingSignature {
     error!("received requests for signature when not sending signature");
     return Err(());
@@ -163,7 +164,7 @@ pub fn get_signature_chunk(buf: &mut [u8]) -> Result<(), ()> {
     .to_u32()
   };
 
-  STATE.store(next_state, Ordering::SeqCst);
+  STATE.store(next_state, SeqCst);
   buf[0] = 0xf1;
   buf[1] = nonce_id;
   buf[2] = part;
@@ -177,7 +178,7 @@ pub fn get_signature_chunk(buf: &mut [u8]) -> Result<(), ()> {
 
 pub fn perform_work() -> ! {
   loop {
-    let state = AuthState::from_u32(STATE.load(Ordering::SeqCst));
+    let state = AuthState::from_u32(STATE.load(SeqCst));
     if state.state == AuthStateType::Signing {
       info!("starting to sign nonce");
 
@@ -205,7 +206,7 @@ pub fn perform_work() -> ! {
           padding: 0,
         }
         .to_u32(),
-        Ordering::SeqCst,
+        SeqCst,
       );
     }
   }
