@@ -6,8 +6,10 @@ use core::sync::atomic::Ordering::SeqCst;
 pub enum AuthStateType {
   Waiting = 0,
   ReceivingNonce = 1,
-  Signing = 2,
-  SendingSignature = 3,
+  ReadyToSign = 2,
+  Signing = 3,
+  SendingSignature = 4,
+  Resetting = 5,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -43,10 +45,46 @@ pub fn read_keypair() {
   }
 }
 
+// Try to move back into the waiting state.
+// If the worker task is currently signing, we probably shouldn't be corrupting memory out from under it,
+// so move into a resetting state to let it finish.
+fn reset_state() -> Result<(), ()> {
+  loop {
+    let current_state = AuthState::from_u32(STATE.load(SeqCst));
+    match current_state.state {
+      AuthStateType::Resetting => {
+        info!("attempted to reset while already resetting");
+      }
+
+      AuthStateType::Signing => {
+        let mut new_state = current_state;
+        new_state.state = AuthStateType::Resetting;
+        if STATE.compare_and_swap(current_state.to_u32(), new_state.to_u32(), SeqCst) != current_state.to_u32() {
+          continue;
+        }
+        warn!("worker task is currently signing, changed signing state to resetting");
+      }
+
+      _ => {
+        let mut new_state = current_state;
+        new_state.state = AuthStateType::Waiting;
+        new_state.nonce_id = 0;
+        new_state.next_part = 0;
+        if STATE.compare_and_swap(current_state.to_u32(), new_state.to_u32(), SeqCst) != current_state.to_u32() {
+          continue;
+        }
+        info!("reset signing state to waiting");
+      }
+    }
+
+    return Err(());
+  }
+}
+
 pub fn set_nonce(bytes: &[u8]) -> Result<(), ()> {
   if bytes.len() != 64 {
     error!("received nonce packet of incorrect length");
-    return Err(());
+    return reset_state();
   }
 
   let received_crc = &bytes[(bytes.len() - 4)..];
@@ -54,7 +92,7 @@ pub fn set_nonce(bytes: &[u8]) -> Result<(), ()> {
 
   if received_crc != calculated_crc {
     error!("CRC mismatch for nonce packet: {:?}", bytes);
-    return Err(());
+    return reset_state();
   }
 
   let received_nonce_id = bytes[1];
@@ -70,7 +108,7 @@ pub fn set_nonce(bytes: &[u8]) -> Result<(), ()> {
     AuthStateType::Waiting => {
       if received_nonce_part != 0 {
         error!("received non-zero nonce part first?");
-        return Err(());
+        return reset_state();
       }
     }
 
@@ -80,7 +118,7 @@ pub fn set_nonce(bytes: &[u8]) -> Result<(), ()> {
           "received wrong nonce id (expected {}, got {})",
           state.nonce_id, received_nonce_id
         );
-        return Err(());
+        return reset_state();
       }
 
       if received_nonce_part != state.next_part {
@@ -88,12 +126,13 @@ pub fn set_nonce(bytes: &[u8]) -> Result<(), ()> {
           "received wrong nonce part (expected {}, got {})",
           state.next_part, received_nonce_part
         );
+        return reset_state();
       }
     }
 
     _ => {
       error!("received nonce while in unexpected state: {:?}", state);
-      return Err(());
+      return reset_state();
     }
   }
 
@@ -107,7 +146,7 @@ pub fn set_nonce(bytes: &[u8]) -> Result<(), ()> {
     info!("done receiving nonce, transitioning to signing state");
     STATE.store(
       AuthState {
-        state: AuthStateType::Signing,
+        state: AuthStateType::ReadyToSign,
         nonce_id: received_nonce_id,
         next_part: 0,
         padding: 0,
@@ -179,7 +218,14 @@ pub fn get_signature_chunk(buf: &mut [u8]) -> Result<(), ()> {
 pub fn perform_work() -> ! {
   loop {
     let state = AuthState::from_u32(STATE.load(SeqCst));
-    if state.state == AuthStateType::Signing {
+    if state.state == AuthStateType::ReadyToSign {
+      let mut new_state = state;
+      new_state.state = AuthStateType::Signing;
+      if !STATE.compare_and_swap(state.to_u32(), new_state.to_u32(), SeqCst) == state.to_u32() {
+        info!("worker cas failed, retrying");
+        continue;
+      }
+
       info!("starting to sign nonce");
 
       let mut nonce = [0u8; 256];
@@ -198,16 +244,33 @@ pub fn perform_work() -> ! {
       info!("done signing nonce");
       crate::allocator::dump_state();
 
-      STATE.store(
-        AuthState {
-          state: AuthStateType::SendingSignature,
-          nonce_id: state.nonce_id,
-          next_part: 0,
-          padding: 0,
+      loop {
+        let state = AuthState::from_u32(STATE.load(SeqCst));
+        let mut new_state = state;
+        if state.state == AuthStateType::Resetting {
+          new_state.state = AuthStateType::Waiting;
+          new_state.nonce_id = 0;
+          new_state.next_part = 0;
+        } else if state.state == AuthStateType::Signing {
+          new_state.state = AuthStateType::SendingSignature;
+          new_state.nonce_id = state.nonce_id;
+          new_state.next_part = 0;
+        } else {
+          // This should be impossible, but just in case...
+          error!(
+            "invalid state transition detected: worker encountered state {:?}",
+            state.state
+          );
+          new_state.state = AuthStateType::Waiting;
+          new_state.nonce_id = 0;
+          new_state.next_part = 0;
         }
-        .to_u32(),
-        SeqCst,
-      );
+
+        if STATE.compare_and_swap(state.to_u32(), new_state.to_u32(), SeqCst) != state.to_u32() {
+          continue;
+        }
+        break;
+      }
     }
   }
 
