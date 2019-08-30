@@ -1,4 +1,5 @@
 use core::alloc::{GlobalAlloc, Layout};
+use cortex_m::interrupt;
 
 const SIZE_CLASS_128: usize = 11;
 const SIZE_CLASS_256: usize = 10;
@@ -102,67 +103,71 @@ pub fn dump_state() {
 
 unsafe impl GlobalAlloc for Allocator {
   unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-    let size = layout.size().next_power_of_two();
-    if size == 128 {
-      for (index, used) in USED_128.iter_mut().enumerate() {
-        if !*used {
-          *used = true;
-          COUNTER_128.increment();
-          return BUF_128[index].as_mut_ptr();
+    interrupt::free(|_| {
+      let size = layout.size().next_power_of_two();
+      if size == 128 {
+        for (index, used) in USED_128.iter_mut().enumerate() {
+          if !*used {
+            *used = true;
+            COUNTER_128.increment();
+            return BUF_128[index].as_mut_ptr();
+          }
         }
-      }
-      panic!("oom: 128");
-    } else if size == 256 {
-      for (index, used) in USED_256.iter_mut().enumerate() {
-        if !*used {
-          *used = true;
-          COUNTER_256.increment();
-          return BUF_256[index].as_mut_ptr();
+        panic!("oom: 128");
+      } else if size == 256 {
+        for (index, used) in USED_256.iter_mut().enumerate() {
+          if !*used {
+            *used = true;
+            COUNTER_256.increment();
+            return BUF_256[index].as_mut_ptr();
+          }
         }
-      }
-      panic!("oom: 256");
-    } else if size == 512 {
-      for (index, used) in USED_512.iter_mut().enumerate() {
-        if !*used {
-          *used = true;
-          COUNTER_512.increment();
-          return BUF_512[index].as_mut_ptr();
+        panic!("oom: 256");
+      } else if size == 512 {
+        for (index, used) in USED_512.iter_mut().enumerate() {
+          if !*used {
+            *used = true;
+            COUNTER_512.increment();
+            return BUF_512[index].as_mut_ptr();
+          }
         }
+        panic!("oom: 512");
+      } else {
+        panic!("unexpected alloc size: {}", layout.size());
       }
-      panic!("oom: 512");
-    } else {
-      panic!("unexpected alloc size: {}", layout.size());
-    }
+    })
   }
 
   unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-    let size = layout.size().next_power_of_two();
-    if size == 128 {
-      for (index, used) in USED_128.iter_mut().enumerate() {
-        if ptr == BUF_128[index].as_mut_ptr() {
-          *used = false;
-          COUNTER_128.decrement();
-          break;
+    interrupt::free(|_| {
+      let size = layout.size().next_power_of_two();
+      if size == 128 {
+        for (index, used) in USED_128.iter_mut().enumerate() {
+          if ptr == BUF_128[index].as_mut_ptr() {
+            *used = false;
+            COUNTER_128.decrement();
+            break;
+          }
         }
-      }
-    } else if size == 256 {
-      for (index, used) in USED_256.iter_mut().enumerate() {
-        if ptr == BUF_256[index].as_mut_ptr() {
-          *used = false;
-          COUNTER_256.decrement();
-          break;
+      } else if size == 256 {
+        for (index, used) in USED_256.iter_mut().enumerate() {
+          if ptr == BUF_256[index].as_mut_ptr() {
+            *used = false;
+            COUNTER_256.decrement();
+            break;
+          }
         }
-      }
-    } else if size == 512 {
-      for (index, used) in USED_512.iter_mut().enumerate() {
-        if ptr == BUF_512[index].as_mut_ptr() {
-          *used = false;
-          COUNTER_512.decrement();
-          break;
+      } else if size == 512 {
+        for (index, used) in USED_512.iter_mut().enumerate() {
+          if ptr == BUF_512[index].as_mut_ptr() {
+            *used = false;
+            COUNTER_512.decrement();
+            break;
+          }
         }
+      } else {
+        panic!("unexpected dealloc size: {}", layout.size());
       }
-    } else {
-      panic!("unexpected dealloc size: {}", layout.size());
-    }
+    })
   }
 }
