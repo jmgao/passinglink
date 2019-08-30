@@ -211,7 +211,7 @@ pub fn get_signature_chunk(buf: &mut [u8]) -> Result<(), ()> {
   buf[4..60].copy_from_slice(data);
   let crc_bytes = crc(&buf[..60]).to_le_bytes();
   buf[60..].copy_from_slice(&crc_bytes);
-  info!("sending part {}/19 of nonce {}", part + 1, nonce_id);
+  info!("sending part {}/19 of signature for nonce {}", part + 1, nonce_id);
   Ok(())
 }
 
