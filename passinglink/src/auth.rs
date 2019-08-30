@@ -238,7 +238,7 @@ pub fn perform_work() -> ! {
         }
       } else {
         error!("failed to sign nonce");
-        break;
+        let _ = reset_state();
       }
 
       info!("done signing nonce");
@@ -272,9 +272,5 @@ pub fn perform_work() -> ! {
         break;
       }
     }
-  }
-
-  loop {
-    unsafe { asm!("nop") };
   }
 }
