@@ -25,3 +25,6 @@
 [submodule "pcb/lib/fm-b2020rgba-hg"]
 	path = pcb/lib/fm-b2020rgba-hg
 	url = https://github.com/jmgao/fm-b2020rgba-hg.git
+[submodule "vendor/stm32-usbd"]
+	path = vendor/stm32-usbd
+	url = https://github.com/jmgao/stm32-usbd.git
