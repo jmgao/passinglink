@@ -1,5 +1,9 @@
 #![allow(unused)]
 
+#[macro_use]
+mod pins;
+pub use pins::*;
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct Axis(u8);

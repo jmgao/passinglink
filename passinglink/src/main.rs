@@ -44,13 +44,9 @@ use usb_device::prelude::*;
 pub mod auth;
 mod hid;
 
-mod input;
-use input::DeviceInputs;
-use input::Hat;
-
 #[macro_use]
-mod pins;
-use pins::*;
+mod input;
+use input::*;
 
 #[cfg(not(feature = "no_serial"))]
 mod serial;

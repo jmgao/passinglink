@@ -42,6 +42,7 @@ mod detail {
 
   macro_rules! assign_inputs {
     ($gpioa: expr, $gpiob: expr, $gpioc: expr, $gpiod: expr) => {{
+      let (_a, _b, _c, _d) = (&mut $gpioa, &mut $gpiob, &mut $gpioc, &mut $gpiod);
       InputPins {
         stick_down: $gpiob.pb5.into_pull_up_input(&mut $gpiob.crl),
         stick_up: $gpiob.pb6.into_pull_up_input(&mut $gpiob.crl),
@@ -137,6 +138,7 @@ mod detail {
 
   macro_rules! assign_inputs {
     ($gpioa: expr, $gpiob: expr, $gpioc: expr, $gpiod: expr) => {{
+      let (_a, _b, _c, _d) = (&mut $gpioa, &mut $gpiob, &mut $gpioc, &mut $gpiod);
       InputPins {
         stick_down: $gpioa.pa10.into_pull_up_input(&mut $gpioa.crh),
         stick_up: $gpioa.pa9.into_pull_up_input(&mut $gpioa.crh),
@@ -231,6 +233,7 @@ mod detail {
 
   macro_rules! assign_inputs {
     ($gpioa: expr, $gpiob: expr, $gpioc: expr, $gpiod: expr) => {{
+      let (_a, _b, _c, _d) = (&mut $gpioa, &mut $gpiob, &mut $gpioc, &mut $gpiod);
       InputPins {
         stick_down: $gpiob.pb9.into_pull_up_input(&mut $gpiob.crh),
         stick_up: $gpiob.pb8.into_pull_up_input(&mut $gpiob.crh),
