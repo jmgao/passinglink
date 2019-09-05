@@ -130,7 +130,18 @@ const APP: () = {
     let mut gpiod = device.GPIOD.split(&mut rcc.apb2);
 
     let input = assign_inputs!(gpioa, gpiob, gpioc, gpiod);
-    let led = assign_leds!(gpioa, gpiob, gpioc, gpiod);
+    let mut led = assign_leds!(gpioa, gpiob, gpioc, gpiod);
+
+    led.front.set_high();
+    if let Some(ref mut r) = led.pcb_r {
+      r.set_high();
+    }
+    if let Some(ref mut g) = led.pcb_g {
+      g.set_high();
+    }
+    if let Some(ref mut b) = led.pcb_b {
+      b.set_high();
+    }
 
     #[cfg(not(feature = "no_serial"))]
     {
