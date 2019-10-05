@@ -202,7 +202,7 @@ const APP: () = {
     USB_HID = usb_hid;
   }
 
-  #[task(priority = 1, schedule = [input_poll], resources = [INPUT, USB_DEV, USB_HID])]
+  #[task(resources = [INPUT, USB_DEV, USB_HID])]
   fn input_poll() {
     interrupt::free(|_| unsafe {
       OUTPUT.button_north.set_value(resources.INPUT.button_north.is_low());
@@ -293,7 +293,6 @@ const APP: () = {
     });
 
     resources.USB_HID.send();
-    schedule.input_poll(scheduled + 72_000.cycles()).unwrap();
   }
 
   #[task(priority = 16, schedule = [timer_tick])]
@@ -323,8 +322,12 @@ const APP: () = {
     usb_poll(&mut resources.USB_DEV, &mut resources.USB_HID);
   }
 
-  #[interrupt(resources = [USB_DEV, USB_HID])]
+  #[interrupt(schedule = [input_poll], resources = [USB_DEV, USB_HID])]
   fn USB_LP_CAN_RX0() {
+    // 900 us
+    let poll_interval = (72 * 900).cycles();
+    let _ = schedule.input_poll(Instant::now() + poll_interval);
+
     usb_poll(&mut resources.USB_DEV, &mut resources.USB_HID);
   }
 
