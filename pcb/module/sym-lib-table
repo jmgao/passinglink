@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name PCB-USB-C)(type Legacy)(uri ${KIPRJMOD}/../lib/PCB-USB-C/PCB-USB-C.lib)(options "")(descr ""))
+  (lib (name fm-b2020rgba-hg)(type Legacy)(uri ${KIPRJMOD}/../lib/fm-b2020rgba-hg/fm-b2020rgba-hg.lib)(options "")(descr ""))
+)
