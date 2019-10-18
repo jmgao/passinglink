@@ -28,3 +28,6 @@
 [submodule "vendor/stm32-usbd"]
 	path = vendor/stm32-usbd
 	url = https://github.com/jmgao/stm32-usbd.git
+[submodule "pcb/lib/kicad-ngff"]
+	path = pcb/lib/kicad-ngff
+	url = https://github.com/jmgao/kicad-ngff.git
