@@ -1,4 +1,5 @@
 (fp_lib_table
-  (lib (name PCB-USB-C)(type KiCad)(uri ${KIPRJMOD}/../lib/PCB-USB-C/PCB-USB-C.pretty)(options "")(descr ""))
-  (lib (name fm-b2020rgba-hg)(type KiCad)(uri ${KIPRJMOD}/../lib/fm-b2020rgba-hg/fm-b2020rgba-hg.pretty)(options "")(descr ""))
+  (lib (name "PCB-USB-C")(type "KiCad")(uri "${KIPRJMOD}/../lib/PCB-USB-C/PCB-USB-C.pretty")(options "")(descr ""))
+  (lib (name "fm-b2020rgba-hg")(type "KiCad")(uri "${KIPRJMOD}/../lib/fm-b2020rgba-hg/fm-b2020rgba-hg.pretty")(options "")(descr ""))
+  (lib (name "NGFF")(type "KiCad")(uri "${KIPRJMOD}/../lib/kicad-ngff/NGFF.pretty")(options "")(descr ""))
 )
