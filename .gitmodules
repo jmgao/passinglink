@@ -1,10 +1,6 @@
 [submodule "vendor/usb-device"]
 	path = vendor/usb-device
 	url = https://github.com/jmgao/usb-device.git
-[submodule "vendor/heapless"]
-	path = vendor/heapless
-	url = https://github.com/jmgao/heapless.git
-	branch = v0.5.0-jmgao
 [submodule "vendor/stm32f1xx-hal"]
 	path = vendor/stm32f1xx-hal
 	url = https://github.com/jmgao/stm32f1xx-hal.git

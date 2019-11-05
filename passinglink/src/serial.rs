@@ -25,7 +25,7 @@ struct BufferedSerialState {
 impl BufferedSerialState {
   fn poll(&mut self) {
     while let Some(c) = self.buffer.peek() {
-      if self.tx.write(c).is_err() {
+      if self.tx.write(*c).is_err() {
         self.tx.listen();
         return;
       }

@@ -22,7 +22,7 @@ stm32f1xx-hal = { path = "../vendor/stm32f1xx-hal", features = ["rt", "stm32f103
 
 cortex-m-rtfm = { version = "0.4", path = "../vendor/cortex-m-rtfm", features = ["timer-queue", "nightly"] }
 proper = { path = "../vendor/proper" }
-heapless = { path = "../vendor/heapless" }
+heapless = { version = "0.5.1" }
 usb-device = { version = "0.2.2", features = ["control-buffer-256"] }
 stm32-usbd = { path = "../vendor/stm32-usbd", features = ["stm32f103xx"] }
 
